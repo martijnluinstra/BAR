@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-narrow content">
+    <header class="content-header">
+        <h1>Delete activity</h1>
+    </header>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <p>
+            Are you sure you want to delete the "{{ activity.name }}" activity and all related data?
+        </p>
+        <p class="text-danger">
+            <strong>This action cannot be undone.</strong>
+        </p>
+        <div class="form-group">
+            {{ form.name.label(class="control-label") }}
+            {{ form.name(class="form-control", autocomplete="off") }}
+        </div>
+        {{ render_errors(form.name) }}
+        <button type="submit" class="btn btn-primary">Submit</button><a href="{{url_for('admin.list_activities')}}" class="btn btn-link">Back</a>
+    </form>
+</div>
+{% endblock %}

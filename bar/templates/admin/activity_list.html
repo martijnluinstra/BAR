@@ -21,10 +21,14 @@
         <tbody>
             {% for activity in activities %}
             <tr id="{{ activity.id }}">
-                <td>{{activity.name}}</td>
+                <td>
+                    {{activity.name}}
+                </td>
                 <td>{{activity.passcode}}</td>
                 <td>
-                	{% if activity.active %}
+                    {% if activity.is_archived %}
+                        <span class="label label-default">archived</span>
+                	{% elif activity.active %}
                 		<a href="{{ url_for('admin.activate_activity', activity_id=activity.id, activate='False')}}"><span class="glyphicon glyphicon-ok"></span></a>
                 	{% else %}
                 		<a href="{{ url_for('admin.activate_activity', activity_id=activity.id)}}"><span class="glyphicon glyphicon-remove"></span></a>

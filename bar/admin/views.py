@@ -1,13 +1,14 @@
 from __future__ import division
 
+import json
+
 from functools import wraps
 
-from flask import request, render_template, redirect, url_for, current_app, has_request_context, jsonify
+from flask import abort, request, render_template, redirect, url_for, current_app, has_request_context, jsonify
 from flask_login import login_user
 from flask_coverapi import current_user
 
 from datetime import datetime
-import json
 from sqlalchemy.exc import IntegrityError
 
 from bar import db
@@ -15,7 +16,7 @@ from bar.pos.models import Activity, Product, Participant, Purchase
 from bar.auction.models import AuctionPurchase
 
 from . import admin
-from .forms import ActivityForm, ImportForm
+from .forms import ActivityForm, ActivityConfirmForm, ImportForm
 
 
 def admin_required(func):
@@ -152,6 +153,8 @@ def _load_activity(data, name=None, passcode=None):
 @admin_required
 def edit_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
+    if activity.is_archived:
+        abort(403)
     form = ActivityForm(request.form, activity)
     if form.validate_on_submit():
         form.populate_obj(activity)
@@ -169,6 +172,8 @@ def edit_activity(activity_id):
 @admin_required
 def impersonate_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
+    if activity.is_archived:
+        abort(403)
     login_user(activity, force=True)
     return redirect(url_for('pos.view_home'))
 
@@ -177,6 +182,8 @@ def impersonate_activity(activity_id):
 @admin_required
 def activate_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
+    if activity.is_archived:
+        abort(403)
     activity.active = request.args.get('activate') != 'False'
     db.session.commit()
     return redirect(url_for('admin.list_activities'))
@@ -186,4 +193,104 @@ def activate_activity(activity_id):
 @admin_required
 def export_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
+    if activity.is_archived:
+        abort(403)
     return jsonify(activity.to_dict())
+
+
+@admin.route('/activities/<int:activity_id>/archive', methods=['GET', 'POST'])
+@admin_required
+def archive_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    form = ActivityConfirmForm()
+
+    is_valid = form.validate_on_submit()
+    if form.is_submitted() and form.name.data != activity.name:
+        is_valid = False
+        form.name.errors.append('Incorrect activity name entered. Please double check.')
+
+    if not is_valid:
+        return render_template('admin/activity_archive_confirm.html', form=form, activity=activity)
+
+    activity.active = False
+    activity.is_archived = True
+
+    pos_purchases_query = db.session.query(
+            db.func.sum(Product.price).label('amount'), 
+            db.func.count(Product.price).label('units')
+        )\
+        .join(Purchase, Purchase.product_id == Product.id)\
+        .filter(Purchase.activity_id == activity.id)\
+        .filter(Purchase.undone == False)
+    auction_total = db.session.query(
+            db.func.sum(AuctionPurchase.price).label('amount'), 
+            db.func.count(AuctionPurchase.price).label('units')
+        )\
+        .filter(AuctionPurchase.activity_id == activity.id)\
+        .filter(AuctionPurchase.undone == False)\
+        .first()
+
+    pos_total = pos_purchases_query.first()
+    pos_products = pos_purchases_query.add_column(Product.name)\
+        .group_by(Product.name).order_by(db.desc('amount')).all()
+
+    stats = {
+        'auction_purchases_total': {
+            'amount': float(auction_total.amount),
+            'units': auction_total.units,
+        },
+        'pos_purchases_total': {
+            'amount': float(pos_total.amount),
+            'units': pos_total.units,
+        },
+        'pos_purchases_products': [ {
+            'name': product.name,
+            'amount': float(product.amount),
+            'units': product.units,
+        } for product in pos_products],
+    }
+
+    activity.archived_stats = json.dumps(stats)
+
+    # Flush for good measure
+    db.session.flush()
+
+    # Delete purchases
+    AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
+    Purchase.query.filter_by(activity_id=activity.id).delete()
+
+    # Delete participants
+    Participant.query.filter_by(activity_id=activity.id).delete()
+
+    db.session.commit()
+    return redirect(url_for('admin.list_activities'))
+
+
+@admin.route('/activities/<int:activity_id>/delete', methods=['GET', 'POST'])
+@admin_required
+def delete_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    form = ActivityConfirmForm()
+
+    is_valid = form.validate_on_submit()
+    if form.is_submitted() and form.name.data != activity.name:
+        is_valid = False
+        form.name.errors.append('Incorrect activity name entered. Please double check.')
+
+    if not is_valid:
+        return render_template('admin/activity_delete_confirm.html', form=form, activity=activity)
+
+    # Delete purchases
+    AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
+    Purchase.query.filter_by(activity_id=activity.id).delete()
+
+    # Delete participants
+    Participant.query.filter_by(activity_id=activity.id).delete()
+
+    # Product
+    Product.query.filter_by(activity_id=activity.id).delete()
+
+    db.session.delete(activity)
+
+    db.session.commit()
+    return redirect(url_for('admin.list_activities'))

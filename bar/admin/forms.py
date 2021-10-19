@@ -7,6 +7,9 @@ class ActivityForm(Form):
     passcode = TextField('Passcode', [validators.InputRequired(message='Passcode is required')])
     active = BooleanField('Active')
 
+class ActivityConfirmForm(Form):
+    name = TextField("Enter this activity's name to confirm.", [validators.InputRequired(message='Name is required')])
+
 class ImportForm(Form):
     import_file = FileField('Activity JSON', validators=[
         FileRequired(), 

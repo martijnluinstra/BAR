@@ -6,7 +6,16 @@
         <h1>{% block title %}{{mode|title}} activity{% endblock %}</h1>
         <div class="content-controls">
             {% if mode != 'add' %}
-                <a href="{{url_for('admin.export_activity', activity_id=id)}}" class="btn btn-default" download>Export</a>
+                <div class="btn-group" role="group">
+                    <a href="{{url_for('admin.export_activity', activity_id=id)}}" class="btn btn-default" download>Export</a>
+                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                        <li><a href="{{url_for('admin.archive_activity', activity_id=id)}}">Archive</a></li>
+                        <li><a href="{{url_for('admin.delete_activity', activity_id=id)}}">Delete</a></li>
+                    </ul>
+                </div>
             {% endif %}
         </div>
     </header>
