@@ -22,6 +22,11 @@
                 {{ form.active }} {{ form.active.label.text }}
             </label>
         </div>
+        <div class="checkbox">
+            <label>
+                {{ form.has_secretary_access }} {{ form.has_secretary_access.label.text }}
+            </label>
+        </div>
         {{ render_errors(form.active) }}
         <button type="submit" class="btn btn-primary">Submit</button><a href="{{url_for('admin.list_activities')}}" class="btn btn-link">Back</a>
     </form>

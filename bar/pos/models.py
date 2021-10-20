@@ -12,6 +12,7 @@ class Activity(db.Model, login.UserMixin):
     passcode = db.Column(db.String(40), nullable=False, unique=True)
     active = db.Column(db.Boolean(), nullable=False, default=True)
     is_archived = db.Column(db.Boolean(), nullable=False, default=False)
+    has_secretary_access = db.Column(db.Boolean(), nullable=False, default=False)
     archived_stats = db.Column(db.String(4096), nullable=True)
     # settings
     age_limit = db.Column(db.Integer, nullable=False, default=18)

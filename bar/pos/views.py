@@ -522,7 +522,7 @@ def activity_export():
 @pos.route('/auto_complete/members', methods=['GET'])
 @login_required
 def auto_complete_members():
-    if current_app.config.get('STAND_ALONE', False):
+    if current_app.config.get('STAND_ALONE', False) or not current_user.has_secretary_access:
         return jsonify([])
     name = request.args.get('name')
     if not name:

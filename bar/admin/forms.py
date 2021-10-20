@@ -6,6 +6,7 @@ class ActivityForm(Form):
     name = TextField('Name', [validators.InputRequired(message='Name is required')])
     passcode = TextField('Passcode', [validators.InputRequired(message='Passcode is required')])
     active = BooleanField('Active')
+    has_secretary_access = BooleanField('Has secretary access')
 
 class ActivityConfirmForm(Form):
     name = TextField("Enter this activity's name to confirm.", [validators.InputRequired(message='Name is required')])

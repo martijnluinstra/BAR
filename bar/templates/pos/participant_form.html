@@ -16,7 +16,7 @@
 		{{ form.hidden_tag() }}
 		<div class="form-group {% if form.member_id.errors %}has-error{% endif %}">
 			{{ form.name.label(class_="control-label") }}
-			{{ form.name(class_="form-control typeahead", autocomplete="off", placeholder="Search member name…") }}
+			{{ form.name(class_="form-control typeahead", autocomplete="off", placeholder="Search member name…" if current_user.has_secretary_access else '') }}
 			{{ form.member_id(type='hidden') }}
 			{% if form.name.errors %}
 				{% for e in form.name.errors %}
