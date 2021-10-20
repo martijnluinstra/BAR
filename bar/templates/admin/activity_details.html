@@ -18,7 +18,7 @@
                     </ul>
                 </div>
             {% else %}
-                <a href="{{url_for('admin.delete_activity', activity_id=activity.id)}}" class="btn btn-default" download>Delete</a>
+                <a href="{{url_for('admin.delete_activity', activity_id=activity.id)}}" class="btn btn-default">Delete</a>
             {% endif %}
         </div>
     </header>
@@ -50,6 +50,12 @@
     </section>
     <section id="pos-stats">
         <h2>Statistics</h2>
+        <p>
+            <strong>Total participants:</strong> {{ stats.participants.total }}
+        </p>
+        <p>
+            <strong>Participants with purchase:</strong> {{ stats.participants.with_purchase }}
+        </p>
         <h3>Auction</h3>
         <p>
             <strong>Total sales:</strong> {{ format_exchange(stats.auction_purchases_total.amount) }} ({{ stats.auction_purchases_total.units }} units)
