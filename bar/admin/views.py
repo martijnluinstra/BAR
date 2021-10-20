@@ -169,7 +169,14 @@ def view_activity(activity_id):
             )\
             .filter(AuctionPurchase.activity_id == activity.id)\
             .filter(AuctionPurchase.undone == False)
-        stats =  {
+        participants_with_purchase = db.session.query(
+            db.func.count(db.distinct(Purchase.participant_id))
+        ).filter_by(activity_id=activity.id).scalar()
+        stats = {
+            'participants': {
+                'total': Participant.query.filter_by(activity_id=activity.id).count(),
+                'with_purchase': participants_with_purchase,
+            },
             'pos_purchases_total': pos_purchases_query.first(),
             'pos_purchases_products': pos_purchases_query.add_column(Product.name)\
                 .group_by(Product.name).order_by(db.desc('amount')).all(),
@@ -269,7 +276,15 @@ def archive_activity(activity_id):
     pos_products = pos_purchases_query.add_column(Product.name)\
         .group_by(Product.name).order_by(db.desc('amount')).all()
 
+    participants_with_purchase = db.session.query(
+        db.func.count(db.distinct(Purchase.participant_id))
+    ).filter_by(activity_id=activity.id).scalar()
+
     stats = {
+        'participants': {
+            'total': Participant.query.filter_by(activity_id=activity.id).count(),
+            'with_purchase': participants_with_purchase,
+        },
         'auction_purchases_total': {
             'amount': float(auction_total.amount),
             'units': auction_total.units,
