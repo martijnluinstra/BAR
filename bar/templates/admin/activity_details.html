@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-narrow content">
+    <header class="content-header">
+        <h1>{{ activity.name }}</h1>
+        <div class="content-controls">
+            {% if not activity.is_archived %}
+                <a href="{{url_for('admin.edit_activity', activity_id=activity.id)}}" class="btn btn-default" download>Edit</a>
+                <div class="btn-group" role="group">
+                    <a href="{{url_for('admin.export_activity', activity_id=activity.id)}}" class="btn btn-default" download>Export</a>
+                    <button class="btn btn-default dropdown-toggle" type="button" id="controls-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="controls-menu">
+                        <li><a href="{{url_for('admin.archive_activity', activity_id=activity.id)}}">Archive</a></li>
+                        <li><a href="{{url_for('admin.delete_activity', activity_id=activity.id)}}">Delete</a></li>
+                    </ul>
+                </div>
+            {% else %}
+                <a href="{{url_for('admin.delete_activity', activity_id=activity.id)}}" class="btn btn-default" download>Delete</a>
+            {% endif %}
+        </div>
+    </header>
+    <section>
+        <a href="{{url_for('admin.list_activities')}}">
+            Back to all activities
+        </a>
+    </section>
+    <section>
+        <h2>Products</h2>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Age Limit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in activity.products %}
+                <tr id="{{ product.id }}">
+                    <td>{{product.name}}</td>
+                    <td>{{format_exchange(product.price)}}</td>
+                    <td>{% if product.age_limit %}<span class="glyphicon glyphicon-ok"></span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section id="pos-stats">
+        <h2>Statistics</h2>
+        <h3>Auction</h3>
+        <p>
+            <strong>Total sales:</strong> {{ format_exchange(stats.auction_purchases_total.amount) }} ({{ stats.auction_purchases_total.units }} units)
+        </p>
+        <h3>Bar</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-sm-7">Product</th>
+                    <th class="col-sm-3">Amount</th>
+                    <th class="col-sm-2">Units</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in stats.pos_purchases_products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ format_exchange(product.amount) }}</td>
+                        <td>{{ product.units }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">No products :(</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th>Total</th>
+                    <th>{{ format_exchange(stats.pos_purchases_total.amount) }}</th>
+                    <th>{{ stats.pos_purchases_total.units }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
+</div>
+{% endblock %}

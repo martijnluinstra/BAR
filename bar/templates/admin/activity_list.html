@@ -35,8 +35,17 @@
                 	{% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('admin.impersonate_activity', activity_id=activity.id)}}" class="btn btn-default btn-sm" target="_blank"><span class="glyphicon glyphicon-user"></span></a>
-                    <a href="{{ url_for('admin.edit_activity', activity_id=activity.id)}}" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-pencil"></span></a>
+                    {% if not activity.is_archived %}
+                        <a href="{{ url_for('admin.impersonate_activity', activity_id=activity.id)}}" class="btn btn-default btn-sm" target="_blank">
+                            <span class="glyphicon glyphicon-user"></span>
+                        </a>
+                        <a href="{{ url_for('admin.edit_activity', activity_id=activity.id)}}" class="btn btn-default btn-sm">
+                            <span class="glyphicon glyphicon-pencil"></span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('admin.view_activity', activity_id=activity.id)}}" class="btn btn-default btn-sm">
+                        <span class="glyphicon glyphicon-info-sign"></span>
+                    </a>
                 </td>
             </tr>
             {% endfor %}

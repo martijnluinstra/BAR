@@ -149,7 +149,42 @@ def _load_activity(data, name=None, passcode=None):
     db.session.commit()
 
 
-@admin.route('/activities/<int:activity_id>', methods=['GET', 'POST'])
+@admin.route('/activities/<int:activity_id>', methods=['GET'])
+@admin_required
+def view_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if activity.is_archived:
+        stats = json.loads(activity.archived_stats)
+    else:
+        pos_purchases_query = db.session.query(
+                db.func.sum(Product.price).label('amount'), 
+                db.func.count(Product.price).label('units')
+            )\
+            .join(Purchase, Purchase.product_id == Product.id)\
+            .filter(Purchase.activity_id == activity.id)\
+            .filter(Purchase.undone == False)
+        auction_purchases_query = db.session.query(
+                db.func.sum(AuctionPurchase.price).label('amount'), 
+                db.func.count(AuctionPurchase.price).label('units')
+            )\
+            .filter(AuctionPurchase.activity_id == activity.id)\
+            .filter(AuctionPurchase.undone == False)
+        stats =  {
+            'pos_purchases_total': pos_purchases_query.first(),
+            'pos_purchases_products': pos_purchases_query.add_column(Product.name)\
+                .group_by(Product.name).order_by(db.desc('amount')).all(),
+            'pos_purchases_participants': pos_purchases_query.add_column(Participant.name)\
+                .join(Participant, Purchase.participant_id == Participant.id)\
+                .group_by(Participant.name).order_by(db.desc('amount')).limit(10),
+            'auction_purchases_total': auction_purchases_query.first(),
+            'auction_purchases_participants': auction_purchases_query.add_column(Participant.name)\
+                .join(Participant, AuctionPurchase.participant_id == Participant.id)\
+                .group_by(Participant.name).order_by(db.desc('amount')).limit(10)
+        }
+    return render_template('admin/activity_details.html', activity=activity, stats=stats)
+
+
+@admin.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
