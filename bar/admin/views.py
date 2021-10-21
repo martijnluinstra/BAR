@@ -286,16 +286,16 @@ def archive_activity(activity_id):
             'with_purchase': participants_with_purchase,
         },
         'auction_purchases_total': {
-            'amount': float(auction_total.amount),
+            'amount': float(auction_total.amount) if auction_total.amount else 0,
             'units': auction_total.units,
         },
         'pos_purchases_total': {
-            'amount': float(pos_total.amount),
+            'amount': float(pos_total.amount) if pos_total.amount else 0,
             'units': pos_total.units,
         },
         'pos_purchases_products': [ {
             'name': product.name,
-            'amount': float(product.amount),
+            'amount': float(product.amount) if product.amount else 0,
             'units': product.units,
         } for product in pos_products],
     }
