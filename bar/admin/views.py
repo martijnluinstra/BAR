@@ -309,6 +309,9 @@ def archive_activity(activity_id):
     AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
     Purchase.query.filter_by(activity_id=activity.id).delete()
 
+    # Flush so we can delete participants
+    db.session.flush()
+
     # Delete participants
     Participant.query.filter_by(activity_id=activity.id).delete()
 
@@ -334,12 +337,17 @@ def delete_activity(activity_id):
     AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
     Purchase.query.filter_by(activity_id=activity.id).delete()
 
+    # Flush so we can delete participants and products
+    db.session.flush()
+
     # Delete participants
     Participant.query.filter_by(activity_id=activity.id).delete()
 
     # Product
     Product.query.filter_by(activity_id=activity.id).delete()
 
+    # Flush so we can delete the activity
+    db.session.flush()
     db.session.delete(activity)
 
     db.session.commit()
