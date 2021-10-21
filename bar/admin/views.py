@@ -254,63 +254,64 @@ def archive_activity(activity_id):
     if not is_valid:
         return render_template('admin/activity_archive_confirm.html', form=form, activity=activity)
 
+    if not activity.is_archived:
+        pos_purchases_query = db.session.query(
+                db.func.sum(Product.price).label('amount'), 
+                db.func.count(Product.price).label('units')
+            )\
+            .join(Purchase, Purchase.product_id == Product.id)\
+            .filter(Purchase.activity_id == activity.id)\
+            .filter(Purchase.undone == False)
+        auction_total = db.session.query(
+                db.func.sum(AuctionPurchase.price).label('amount'), 
+                db.func.count(AuctionPurchase.price).label('units')
+            )\
+            .filter(AuctionPurchase.activity_id == activity.id)\
+            .filter(AuctionPurchase.undone == False)\
+            .first()
+
+        pos_total = pos_purchases_query.first()
+        pos_products = pos_purchases_query.add_column(Product.name)\
+            .group_by(Product.name).order_by(db.desc('amount')).all()
+
+        participants_with_purchase = db.session.query(
+            db.func.count(db.distinct(Purchase.participant_id))
+        ).filter_by(activity_id=activity.id).scalar()
+
+        stats = {
+            'participants': {
+                'total': Participant.query.filter_by(activity_id=activity.id).count(),
+                'with_purchase': participants_with_purchase,
+            },
+            'auction_purchases_total': {
+                'amount': float(auction_total.amount) if auction_total.amount else 0,
+                'units': auction_total.units,
+            },
+            'pos_purchases_total': {
+                'amount': float(pos_total.amount) if pos_total.amount else 0,
+                'units': pos_total.units,
+            },
+            'pos_purchases_products': [ {
+                'name': product.name,
+                'amount': float(product.amount) if product.amount else 0,
+                'units': product.units,
+            } for product in pos_products],
+        }
+
+        activity.archived_stats = json.dumps(stats)
+
     activity.active = False
     activity.is_archived = True
 
-    pos_purchases_query = db.session.query(
-            db.func.sum(Product.price).label('amount'), 
-            db.func.count(Product.price).label('units')
-        )\
-        .join(Purchase, Purchase.product_id == Product.id)\
-        .filter(Purchase.activity_id == activity.id)\
-        .filter(Purchase.undone == False)
-    auction_total = db.session.query(
-            db.func.sum(AuctionPurchase.price).label('amount'), 
-            db.func.count(AuctionPurchase.price).label('units')
-        )\
-        .filter(AuctionPurchase.activity_id == activity.id)\
-        .filter(AuctionPurchase.undone == False)\
-        .first()
-
-    pos_total = pos_purchases_query.first()
-    pos_products = pos_purchases_query.add_column(Product.name)\
-        .group_by(Product.name).order_by(db.desc('amount')).all()
-
-    participants_with_purchase = db.session.query(
-        db.func.count(db.distinct(Purchase.participant_id))
-    ).filter_by(activity_id=activity.id).scalar()
-
-    stats = {
-        'participants': {
-            'total': Participant.query.filter_by(activity_id=activity.id).count(),
-            'with_purchase': participants_with_purchase,
-        },
-        'auction_purchases_total': {
-            'amount': float(auction_total.amount) if auction_total.amount else 0,
-            'units': auction_total.units,
-        },
-        'pos_purchases_total': {
-            'amount': float(pos_total.amount) if pos_total.amount else 0,
-            'units': pos_total.units,
-        },
-        'pos_purchases_products': [ {
-            'name': product.name,
-            'amount': float(product.amount) if product.amount else 0,
-            'units': product.units,
-        } for product in pos_products],
-    }
-
-    activity.archived_stats = json.dumps(stats)
-
-    # Flush for good measure
-    db.session.flush()
+    # Commit for good measure
+    db.session.commit()
 
     # Delete purchases
     AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
     Purchase.query.filter_by(activity_id=activity.id).delete()
 
-    # Flush so we can delete participants
-    db.session.flush()
+    # Commit so we can delete participants
+    db.session.commit()
 
     # Delete participants
     Participant.query.filter_by(activity_id=activity.id).delete()
@@ -337,8 +338,8 @@ def delete_activity(activity_id):
     AuctionPurchase.query.filter_by(activity_id=activity.id).delete()
     Purchase.query.filter_by(activity_id=activity.id).delete()
 
-    # Flush so we can delete participants and products
-    db.session.flush()
+    # Commit so we can delete participants and products
+    db.session.commit()
 
     # Delete participants
     Participant.query.filter_by(activity_id=activity.id).delete()
@@ -346,9 +347,9 @@ def delete_activity(activity_id):
     # Product
     Product.query.filter_by(activity_id=activity.id).delete()
 
-    # Flush so we can delete the activity
-    db.session.flush()
-    db.session.delete(activity)
+    # Commit so we can delete the activity
+    db.session.commit()
 
+    db.session.delete(activity)
     db.session.commit()
     return redirect(url_for('admin.list_activities'))
