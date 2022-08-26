@@ -1,42 +1,57 @@
-from __future__ import division
-
-from urlparse import urlparse, urljoin
-
-from urlparse import urlparse, urljoin
 from datetime import datetime
+from urllib.parse import urlparse, urljoin
+
 from dateutil.relativedelta import relativedelta
 
-from flask import request, g
+from flask import request, g, current_app, Markup
 from flask_login import current_user
 
-from . import app
 from .services.secretary import SecretaryAPI
 
-
-@app.template_test()
-def equalto(value, other):
-    return value == other
+import bleach
+import markdown
 
 
-@app.context_processor
-def utility_processor():
-    def format_exchange(amount):
-        if not amount:
-            amount = 0
-        return format_price(amount/100)
-    def format_price(amount, currency=u"\u20AC"):
-        return u'{1} {0:.2f}'.format(amount, currency)
-    def is_eligible(birthdate, product_age_limit):
-        if not birthdate:
-            return True
-        age = relativedelta(datetime.now(), birthdate).years
-        return not (product_age_limit and age<current_user.age_limit)
-    return {
-        'format_exchange': format_exchange,
-        'format_price': format_price,
-        'is_eligible': is_eligible,
-        'now': datetime.now()
-    }
+def render_markdown(content):
+    clean = bleach.clean(content)
+    return markdown.markdown(
+        clean,
+        extensions=(
+            'sane_lists',
+            'smarty',
+            'pymdownx.magiclink',
+            'pymdownx.saneheaders',
+            'pymdownx.betterem',
+            'pymdownx.tilde',
+        ),
+        extension_configs={
+            'pymdownx.tilde': {
+                'subscript': False,
+            },
+        },
+        output_format='html5',
+    )
+
+
+def markdown_filter(content):
+    return Markup(render_markdown(content))
+
+
+def format_price(amount, currency='€'):
+    return '{1} {0:.2f}'.format(amount, currency)
+
+
+def format_exchange(amount):
+    if not amount:
+        amount = 0
+    return format_price(amount/100)
+
+
+def is_eligible(participant, product):
+    if not participant.birthday:
+        return True
+    age = relativedelta(datetime.now(), participant.birthday).years
+    return not (product.age_limit and age<current_user.age_limit)
 
 
 def is_safe_url(target):
@@ -46,7 +61,15 @@ def is_safe_url(target):
            ref_url.netloc == test_url.netloc
 
 
+def init_app(app):
+    app.add_template_filter(format_exchange)
+    app.add_template_filter(format_price)
+    app.add_template_filter(is_eligible)
+    app.add_template_filter(markdown_filter, name='markdown')
+    app.add_template_global(datetime.now, name='now')
+
+
 def get_secretary_api():
     if not g.get('_secretary_api'):
-        g._secretary_api = SecretaryAPI(app)
+        g._secretary_api = SecretaryAPI(current_app)
     return g.get('_secretary_api')

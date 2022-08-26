@@ -11,7 +11,7 @@
 		<tr><th>BIC</th><td>{{ participant.bic }}</td></tr>
 		<tr class="visible-print-table-row">
 			<th>Date</th>
-			<td>{{ now.strftime('%Y-%m-%d') }} </td>
+			<td>{{ now().strftime('%Y-%m-%d') }} </td>
 		</tr>
 		<tr class="visible-print-table-row signature">
 			<th>Signature</th>
@@ -25,7 +25,7 @@
 	{% for product in products %}
 		<tr>
 			<th class="col-sm-4">{{ product.name }}</th>
-			<td class="col-sm-8">{{ format_price(product.price/100) }}</td>
+			<td class="col-sm-8">{{ product.price|format_exchange }}</td>
 		</tr>
 	{% endfor %}
 	</table>
@@ -42,6 +42,7 @@
 	<h1 class="hidden-print">{% block title %} Terms and conditions {% endblock %}</h1>
 	{{ render_markdown_tags(terms) }}
 	<form method="POST" class="hidden-print">
+		<input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token() }}">
 		<a href="{{ next_url }}" class="btn btn-danger">I disagree</a>
 		<button type="submit" class="btn btn-success">I agree to the terms and conditions</a>
 	</form>

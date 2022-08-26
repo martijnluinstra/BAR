@@ -57,6 +57,7 @@
 {% block scripts %}
     {{super()}}
     <script>
+    window.csrf_token = "{{ csrf_token() }}";
     window.import_data = {{ json_data|tojson }};
 
     window.urls = {

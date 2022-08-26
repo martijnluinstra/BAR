@@ -37,10 +37,10 @@
             {% for purchase in purchases %}
             <tr id="{{ purchase.id }}">
                 <td>{{purchase.description}}</td>
-                <td>{{format_price(purchase.price/100)}}</td>
+                <td>{{purchase.price|format_exchange}}</td>
                 <td>{{purchase.timestamp.strftime('%Y-%m-%d %H:%M:%S')}}</td>
                 <td>
-                    <a href="{{url_for('pos.undo', purchase_id=purchase.id)}}" data-participant-id="{{participant.id}}" data-purchase-id="{{purchase.id}}" data-price="{{purchase.price}}" class="btn btn-default btn-sm {{ 'disabled' if purchase.undone }}" data-type="undo">Undo</a>
+                    <a href="{{url_for('auction.undo_auction_purchase', purchase_id=purchase.id, next=request.url)}}" data-participant-id="{{participant.id}}" data-purchase-id="{{purchase.id}}" data-price="{{purchase.price}}" class="btn btn-default btn-sm {{ 'disabled' if purchase.undone }}" data-type="undo">Undo</a>
                 </td>
             </tr>
             {% endfor %}

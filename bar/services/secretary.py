@@ -1,8 +1,5 @@
-from __future__ import unicode_literals
-
-import requests, json
-
-from pprint import pprint
+import json
+import requests
 
 TOKEN_DUMP_LOCATION = 'data/'
 
@@ -15,7 +12,7 @@ class SecretaryTokenException(SecretaryAPIException):
     pass
 
 
-class SecretaryPerson(object):
+class SecretaryPerson:
     def __init__(self, person):
         self.id = person['id']
         if person['family_name_preposition']:
@@ -35,7 +32,7 @@ class SecretaryPerson(object):
         return {field: getattr(self, field) for field in fields}
 
 
-class SecretaryAPI(object):
+class SecretaryAPI:
     def __init__(self, app):
         self.base_url = app.config.get('SECRETARY_URL')
 
@@ -60,7 +57,7 @@ class SecretaryAPI(object):
         if not ids:
             return []
 
-        if not all(isinstance(x, (int, long)) for x in ids):
+        if not all(isinstance(x, int) for x in ids):
             raise TypeError('Cover ID needs to be an integer')
         
         result = self._get_json('persons/all.json', send_token=True, params={'id': ','.join([str(x) for x in ids])})
@@ -104,4 +101,4 @@ class SecretaryAPI(object):
 
 
 def _interpret_result(result):
-    return {id: SecretaryPerson(details) for id, details in result.iteritems()}
+    return {id: SecretaryPerson(details) for id, details in result.items()}

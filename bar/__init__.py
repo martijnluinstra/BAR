@@ -1,40 +1,56 @@
 from flask import Flask
-from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_misaka import Misaka
+from flask_wtf.csrf import CSRFProtect
+from sqlalchemy import MetaData
 
 from flask_coverapi import CoverSessionManager
 
-# Init app
-app = Flask(__name__)
-app.config.from_object('config')
 
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+naming_convention = {
+    'ix': 'ix_%(column_0_label)s',
+    'uq': 'uq_%(table_name)s_%(column_0_name)s',
+    'ck': 'ck_%(table_name)s_%(column_0_name)s',
+    'fk': 'fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s',
+    'pk': 'pk_%(table_name)s'
+}
 
-md = Misaka(skip_html=True)
-md.init_app(app)
+db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
+migrate = Migrate(compare_type=True)
+
+csrf = CSRFProtect()
 
 login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'pos.login'
+cover_session_manager = CoverSessionManager()
 
-if not app.config.get('STAND_ALONE', False):
-	cover_session_manager = CoverSessionManager(app.config['COVER_APP'], app.config['COVER_SECRET'], flask_app=app)
 
-from .admin import admin
-from .auction import auction
-from .pos import pos
+def create_app():
+    # Init app
+    app = Flask(__name__)
+    app.config.from_object('config')
 
-app.register_blueprint(admin)
-app.register_blueprint(auction)
-app.register_blueprint(pos)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    csrf.init_app(app)
 
-from .pos.models import Activity
+    if not app.config.get('STAND_ALONE', False):
+        cover_session_manager.init_app(app)
 
-@login_manager.user_loader
-def load_activity(activity_id):
-    return Activity.query.get(activity_id)
+    login_manager.login_view = 'pos.login'
 
-from . import utils
+    from . import admin, auction, pos, utils
+    app.register_blueprint(admin.bp)
+    app.register_blueprint(auction.bp)
+    app.register_blueprint(pos.bp)
+
+    utils.init_app(app)
+
+    from .pos.models import Activity
+
+    @login_manager.user_loader
+    def load_activity(activity_id):
+        return Activity.query.get(activity_id)
+
+    return app

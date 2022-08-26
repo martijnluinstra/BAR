@@ -13,10 +13,10 @@ SQLALCHEMY_DATABASE_URI = 'dialect+driver://username:password@host:port/database
 # SQLALCHEMY_DATABASE_URI = 'mysql://bar:bar@localhost/bar'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-COVER_APP = u'bar'
-COVER_SECRET = u''
+COVER_APP = 'bar'
+COVER_SECRET = ''
 
-ADMINS = ('board','audicee','candy','foodcee','webcie')
+COVER_ADMINS = ('board','audicee','candy','foodcee','webcie')
 
 SECRETARY_URL = ''
 SECRETARY_USER = ''

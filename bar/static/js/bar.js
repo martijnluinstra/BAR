@@ -6,7 +6,7 @@ var model = {
 };
 var timers = {};
 var config = {
-    error_message: 'Something went wrong? See the console, or ask Martijn! (06-81040211)',
+    error_message: 'Something went wrong? See the console, or ask Martijn!',
     history_size: 10
 };
 
@@ -65,6 +65,7 @@ function create_sync_task(url, item) {
             type: "POST",
             data: JSON.stringify(model[item]),
             contentType: "application/json",
+            headers: {'X-CSRFToken': window.csrf_token},
             timeout: 5000
         }).fail(function(response){
             model[item].concat(submitted_items);

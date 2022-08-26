@@ -1,47 +1,47 @@
 from validators import iban
 
 from flask import current_app
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import TextField, BooleanField, IntegerField, DateTimeField, RadioField, SelectField, validators, TextAreaField
+from wtforms import StringField, BooleanField, IntegerField, DateTimeField, RadioField, SelectField, validators, TextAreaField
 
 
-class ExportForm(Form):
+class ExportForm(FlaskForm):
     pos = BooleanField('Consumptions')
     auction = BooleanField('Auction')
-    description_pos_prefix = TextField('Consumption description prefix (optional)', [validators.Optional(strip_whitespace=True)])
-    description_auction_prefix = TextField('Auction description prefix (optional)', [validators.Optional(strip_whitespace=True)])
-    description = TextField('Description (optional)', [validators.Optional(strip_whitespace=True)])
+    description_pos_prefix = StringField('Consumption description prefix (optional)', [validators.Optional(strip_whitespace=True)])
+    description_auction_prefix = StringField('Auction description prefix (optional)', [validators.Optional(strip_whitespace=True)])
+    description = StringField('Description (optional)', [validators.Optional(strip_whitespace=True)])
 
 
-class ParticipantForm(Form):
-    name = TextField('Name', validators=[
+class ParticipantForm(FlaskForm):
+    name = StringField('Name', validators=[
         validators.InputRequired(message='Name is required')
     ])
     member_id = IntegerField('Member ID', validators=[
         validators.Optional(strip_whitespace=True)
     ])
-    address = TextField('Address', [
+    address = StringField('Address', [
         validators.InputRequired(message='Address is required')
     ])
-    city = TextField('Place of residence', [
+    city = StringField('Place of residence', [
         validators.InputRequired(message='Place of residence is required')
     ])
-    email = TextField('Email address', [
+    email = StringField('Email address', [
         validators.InputRequired(message='Email is required'),
         validators.Email(message='Invalid email address')
     ])
-    iban = TextField('IBAN', [
+    iban = StringField('IBAN', [
         validators.InputRequired(message='IBAN is required')
     ])
-    bic = TextField('BIC (optional)', [
+    bic = StringField('BIC (optional)', [
         validators.Optional(strip_whitespace=True),
         validators.length(max=11, message='A BIC may not be longer than 11 characters')
     ])
     birthday  = DateTimeField('Date of birth (optional)', format='%Y-%m-%d', validators=[
         validators.Optional(strip_whitespace=True)
     ])
-    barcode = TextField('Barcode', [
+    barcode = StringField('Barcode', [
         validators.Optional(strip_whitespace=True),
         validators.length(max=255)
     ])
@@ -51,31 +51,31 @@ class ParticipantForm(Form):
             raise validators.StopValidation('This is not a valid IBAN')
 
 
-class RegistrationForm(Form):
-    name = TextField('Name', [validators.InputRequired(message='Name is required')])
+class RegistrationForm(FlaskForm):
+    name = StringField('Name', [validators.InputRequired(message='Name is required')])
     birthday = DateTimeField('Birthday', format='%d-%m-%Y', validators=[
         validators.Optional(strip_whitespace=True)
     ])
-    barcode = TextField('Barcode', [
+    barcode = StringField('Barcode', [
         validators.Optional(strip_whitespace=True),
         validators.length(max=255)
     ])
 
 
-class ProductForm(Form):
-    name = TextField('Name', [validators.InputRequired(message='Name is required')])
+class ProductForm(FlaskForm):
+    name = StringField('Name', [validators.InputRequired(message='Name is required')])
     price = IntegerField('Price (in Euro cent)', [validators.InputRequired(message='Price is required')])
     priority = IntegerField('Priority (position of the button)', [validators.InputRequired(message='Priority is required')])
     age_limit = BooleanField('Age limit')
 
 
-class ImportForm(Form):
+class ImportForm(FlaskForm):
     import_file = FileField('Participants CSV', validators=[FileRequired(), FileAllowed(['csv'], 'CSV files only!')])
     delimiter = SelectField('Delimiter', choices=[(';', ';'), (',', ',')])
     header = BooleanField('This file has a header')
 
 
-class SettingsForm(Form):
+class SettingsForm(FlaskForm):
     age_limit = IntegerField('Age limit (minimal legal age)', [validators.InputRequired(message='Age limit is required')])
     stacked_purchases = BooleanField('Allow stacked purchases (e.g. buy 6 beers at once)')
     require_terms = BooleanField('Accept terms before purchases')
@@ -84,7 +84,7 @@ class SettingsForm(Form):
         validators.Optional(strip_whitespace=True),
         validators.length(max=4096)
     ])
-    uuid_prefix = TextField('UUID Prefix', [validators.length(max=255)])
+    uuid_prefix = StringField('UUID Prefix', [validators.length(max=255)])
 
     def validate_terms(form, field):
         if not form.require_terms.data:

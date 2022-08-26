@@ -29,7 +29,7 @@
                 data-uuid="{{ participant.uuid|default('', True) }}"
             >
                 <td>{{participant.name}}</td>
-                <td>{{format_exchange(participant.spend if participant.spend != None else 0)}}</td>
+                <td>{{participant.spend|format_exchange}}</td>
                 <td>
                 {% if participant.has_agreed_to_terms or not current_user.require_terms%}
                     <form class="form-inline">
@@ -39,7 +39,7 @@
                                 data-participant-id="{{participant.id}}"
                                 data-product-id="{{product.id}}"
                                 data-price="{{product.price}}"
-                                data-is-eligible="{{ is_eligible(participant.birthday,product.age_limit)|lower }}"
+                                data-is-eligible="{{ participant|is_eligible(product)|lower }}"
                                 data-type="purchase" class="btn btn-primary btn-sm"
                             >{{product.name}}</button>
                         {% endfor %}
@@ -73,6 +73,7 @@
     </div>
     <script>
     window.uuid_prefix = "{{ current_user.uuid_prefix }}";
+    window.csrf_token = "{{ csrf_token() }}";
     </script>
     {{ super() }}
 {% endblock %}

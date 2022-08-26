@@ -41,7 +41,7 @@
                 {% for product in activity.products %}
                 <tr id="{{ product.id }}">
                     <td>{{product.name}}</td>
-                    <td>{{format_exchange(product.price)}}</td>
+                    <td>{{product.price|format_exchange}}</td>
                     <td>{% if product.age_limit %}<span class="glyphicon glyphicon-ok"></span>{% endif %}</td>
                 </tr>
                 {% endfor %}
@@ -58,7 +58,7 @@
         </p>
         <h3>Auction</h3>
         <p>
-            <strong>Total sales:</strong> {{ format_exchange(stats.auction_purchases_total.amount) }} ({{ stats.auction_purchases_total.units }} units)
+            <strong>Total sales:</strong> {{ stats.auction_purchases_total.amount|format_exchange }} ({{ stats.auction_purchases_total.units }} units)
         </p>
         <h3>Bar</h3>
         <table class="table table-hover">
@@ -73,7 +73,7 @@
                 {% for product in stats.pos_purchases_products %}
                     <tr>
                         <td>{{ product.name }}</td>
-                        <td>{{ format_exchange(product.amount) }}</td>
+                        <td>{{ product.amount|format_exchange }}</td>
                         <td>{{ product.units }}</td>
                     </tr>
                 {% else %}
@@ -85,7 +85,7 @@
             <tfoot>
                 <tr>
                     <th>Total</th>
-                    <th>{{ format_exchange(stats.pos_purchases_total.amount) }}</th>
+                    <th>{{ stats.pos_purchases_total.amount|format_exchange }}</th>
                     <th>{{ stats.pos_purchases_total.units }}</th>
                 </tr>
             </tfoot>

@@ -1,21 +1,20 @@
-from __future__ import division
-
-from flask import request, render_template, redirect, url_for, abort, make_response, flash, Response, get_flashed_messages, current_app
-from flask_login import login_user, logout_user, login_required, current_user
-from sqlalchemy.exc import IntegrityError, InvalidRequestError
-
-from datetime import datetime
+import csv
+import io
 import json
 import re
-import csv
-import validators
+from datetime import datetime
 
+
+import validators
+from flask import request, render_template, redirect, url_for, abort, make_response, flash, Response, get_flashed_messages, current_app, jsonify
+from flask_login import login_user, logout_user, login_required, current_user
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 
 from bar import db, login_manager
 from bar.utils import is_safe_url, get_secretary_api
 from bar.auction.models import AuctionPurchase
 
-from . import pos
+from . import bp
 from .models import Activity, Participant, Purchase, Product
 from .forms import ParticipantForm, ProductForm, RegistrationForm, SettingsForm, ImportForm, ExportForm
 
@@ -24,14 +23,7 @@ class CSVRowError(Exception):
     pass
 
 
-def jsonify(data):
-    """ Create a json response from data """
-    response = make_response(json.dumps(data, indent=2, ensure_ascii=False).encode('utf-8'))
-    response.content_type = 'application/json'
-    return response
-
-
-@pos.route("/login", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET", "POST"])
 def login():
     error = None
     if request.method == 'POST':
@@ -49,14 +41,14 @@ def login():
     return render_template('login.html', error=error)
 
 
-@pos.route('/logout', methods=['GET'])
+@bp.route('/logout', methods=['GET'])
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('pos.login'))
 
 
-@pos.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
 @login_required
 def view_home():
     """ View all participants attending the activity, ordered by name """
@@ -75,12 +67,12 @@ def view_home():
     return render_template('pos/main.html', participants=participants, products=products)
 
  
-@pos.route('/faq', methods=['GET'])
+@bp.route('/faq', methods=['GET'])
 def faq():
     return render_template('faq.html')
 
 
-@pos.route('/participants', methods=['GET'])
+@bp.route('/participants', methods=['GET'])
 @login_required
 def list_participants():
     """ List all participants in the system by name """
@@ -88,7 +80,7 @@ def list_participants():
     return render_template('pos/participant_list.html', participants=participants)
 
 
-@pos.route('/participants/import', methods=['GET', 'POST'])
+@bp.route('/participants/import', methods=['GET', 'POST'])
 @login_required
 def import_participants():
     form = ImportForm()
@@ -105,7 +97,8 @@ def import_participants():
 def import_process_csv(form):
     data = []
     line_length = 0
-    participant_data = csv.reader(form.import_file.data, delimiter=form.delimiter.data.encode('ascii', 'ignore'))
+    # csv.reader needs text file, not binary
+    participant_data = csv.reader(io.TextIOWrapper(form.import_file.data), delimiter=form.delimiter.data)
     for line, row in enumerate(participant_data):
         if line==0:
             line_length = len(row)
@@ -140,7 +133,7 @@ def import_validate_row(key, row, errors):
             import_report_error(errors,key,{'birthday': ['type']})
     row['birthday'] = birthday
     # Clean iban and bic
-    row['iban'] = row['iban'].upper().replace(" ", "").encode('ascii', 'ignore')
+    row['iban'] = row['iban'].upper().replace(" ", "").encode('ascii', 'ignore').decode()
     row['bic'] = row['bic'].upper().replace(" ", "")
 
     if not validators.email(row['email']):
@@ -158,7 +151,7 @@ def import_validate_row(key, row, errors):
 
 def import_process_data(data):
     errors = {}
-    for key, row in data.iteritems():
+    for key, row in data.items():
         row, errors = import_validate_row(key, row, errors)
         participant = Participant(
             name=row['name'],
@@ -185,7 +178,7 @@ def import_process_data(data):
         return jsonify(errors)
 
 
-@pos.route('/participants/add', methods=['GET', 'POST'])
+@bp.route('/participants/add', methods=['GET', 'POST'])
 @login_required
 def add_participant():
     """ Try to create a new participant. """
@@ -212,11 +205,11 @@ def add_participant():
     return render_template('pos/participant_form.html', form=form, mode='add')
 
 
-@pos.route('/participants/<int:participant_id>', methods=['GET', 'POST'])
+@bp.route('/participants/<int:participant_id>', methods=['GET', 'POST'])
 @login_required
 def edit_participant(participant_id):
     participant = Participant.query.get_or_404(participant_id)
-    form = ParticipantForm(request.form, participant)
+    form = ParticipantForm(obj=participant)
     if form.validate_on_submit():
         form.populate_obj(participant)
         try:
@@ -229,7 +222,7 @@ def edit_participant(participant_id):
     return render_template('pos/participant_form.html', form=form, mode='edit', id=participant.id)
 
 
-@pos.route('/participants/<int:participant_id>/terms', methods=['GET', 'POST'])
+@bp.route('/participants/<int:participant_id>/terms', methods=['GET', 'POST'])
 @login_required
 def accept_terms_participant(participant_id):
     """ Let a participant accept terms """
@@ -254,7 +247,7 @@ def accept_terms_participant(participant_id):
     )
 
 
-@pos.route('/participants/<int:participant_id>/history', methods=['GET'])
+@bp.route('/participants/<int:participant_id>/history', methods=['GET'])
 @login_required
 def participant_history(participant_id):
     view = request.args.get('view', 'pos')
@@ -283,7 +276,7 @@ def participant_history(participant_id):
     return render_template('pos/participant_history.html', purchases=purchases, participant=participant, view=view)
 
 
-@pos.route('/participants/registration', methods=['GET', 'POST'])
+@bp.route('/participants/registration', methods=['GET', 'POST'])
 @login_required
 def participant_registration():
     """ Register a participant """
@@ -308,7 +301,7 @@ def participant_registration():
     return render_template('pos/participant_registration.html', form=form)
 
 
-@pos.route('/participants/names.json', methods=['GET'])
+@bp.route('/participants/names.json', methods=['GET'])
 @login_required
 def list_participant_names():
     """ List all participants """
@@ -326,7 +319,7 @@ def list_participant_names():
     return jsonify(list(generate(participants)))
 
 
-@pos.route('/purchases', methods=['POST'])
+@bp.route('/purchases', methods=['POST'])
 @login_required
 def batch_consume():
     data = request.get_json()
@@ -337,7 +330,7 @@ def batch_consume():
     return 'Purchases created', 201
 
 
-@pos.route('/purchases/undo', methods=['POST'])
+@bp.route('/purchases/undo', methods=['POST'])
 @login_required
 def batch_undo():
     data = request.get_json()
@@ -350,19 +343,22 @@ def batch_undo():
     return 'Purchases undone', 201
 
 
-@pos.route('/purchases/<int:purchase_id>/undo', methods=['GET'])
+@bp.route('/purchases/<int:purchase_id>/undo', methods=['GET'])
 @login_required
 def undo(purchase_id):
+    next_url = request.args.get('next')
+    if not is_safe_url(next_url):
+        return abort(400)
+
     purchase = Purchase.query.get_or_404(purchase_id)
     if purchase.activity_id != current_user.id:
         return 'Purchase not in current activity', 401    
     purchase.undone = request.args.get('undo') != 'False'
     db.session.commit()
-    next_url = request.args.get('next')
-    return redirect(url_for('pos.participant_history', participant_id = purchase.participant_id))
+    return redirect(next_url or url_for('pos.participant_history', participant_id = purchase.participant_id))
 
 
-@pos.route('/products', methods=['GET', 'POST'])
+@bp.route('/products', methods=['GET', 'POST'])
 @login_required
 def list_products():
     """ 
@@ -372,7 +368,7 @@ def list_products():
     return render_template('pos/product_list.html', products=products)
 
 
-@pos.route('/products/add', methods=['GET', 'POST'])
+@bp.route('/products/add', methods=['GET', 'POST'])
 @login_required
 def add_product():
     """ 
@@ -393,14 +389,14 @@ def add_product():
     return render_template('pos/product_form.html', form=form, mode='add')
 
 
-@pos.route('/products/<int:product_id>', methods=['GET', 'POST'])
+@bp.route('/products/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def edit_product(product_id):
     """ Edit a product """
     product = Product.query.get_or_404(product_id)
     if product.activity_id != current_user.id:
         return 'Product not in current activity', 401 
-    form = ProductForm(request.form, product)
+    form = ProductForm(obj=product)
     if form.validate_on_submit():
         form.populate_obj(product)
         db.session.commit()
@@ -408,7 +404,7 @@ def edit_product(product_id):
     return render_template('pos/product_form.html', form=form, mode='edit', id=product.id)
 
 
-@pos.route('/products/<int:product_id>/delete', methods=['GET', 'POST'])
+@bp.route('/products/<int:product_id>/delete', methods=['GET', 'POST'])
 @login_required
 def delete_product(product_id):
     """ Edit a product """
@@ -424,11 +420,11 @@ def delete_product(product_id):
     return redirect(url_for('pos.list_products'))
 
 
-@pos.route('/settings', methods=['GET', 'POST'])
+@bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def activity_settings():
     """ Edit settings """
-    form = SettingsForm(request.form, current_user)
+    form = SettingsForm(obj=current_user)
     if form.validate_on_submit():
         form.populate_obj(current_user)
         db.session.commit()
@@ -436,19 +432,19 @@ def activity_settings():
     return render_template('pos/activity_settings.html', form=form)
 
 
-@pos.route('/settings/export', methods=['GET'])
+@bp.route('/settings/export', methods=['GET'])
 @login_required
 def activity_export_form():
     """ Edit settings """
-    form = ExportForm(csrf_enabled=False)
+    form = ExportForm(meta={'csrf': False})
     return render_template('pos/export_form.html', form=form)
 
 
-@pos.route('/activity/export.csv', methods=['GET'])
+@bp.route('/activity/export.csv', methods=['GET'])
 @login_required
 def activity_export():
     """ Export all purchases of an activity """
-    form = ExportForm(request.args, csrf_enabled=False)
+    form = ExportForm(formdata=request.args, meta={'csrf': False})
     if not form.validate():
         return 'Unexpected error in form', 400
 
@@ -514,12 +510,12 @@ def activity_export():
             bic = re.sub(r'\s+', '', participant.bic) if participant.bic else ''
 
             p_data = [participant.name, participant.address, participant.city, participant.email, iban, bic, float(amount)/100, description]
-            yield ','.join(['"' + unicode(field).encode('utf-8') + '"' for field in p_data]) + '\n'
+            yield ','.join(['"' + str(field) + '"' for field in p_data]) + '\n'
 
-    return Response(generate(participants, settings), mimetype='text/csv')
+    return Response(''.join(generate(participants, settings)), mimetype='text/csv')
 
 
-@pos.route('/auto_complete/members', methods=['GET'])
+@bp.route('/auto_complete/members', methods=['GET'])
 @login_required
 def auto_complete_members():
     if current_app.config.get('STAND_ALONE', False) or not current_user.has_secretary_access:
@@ -528,10 +524,10 @@ def auto_complete_members():
     if not name:
         return jsonify([])
     members = get_secretary_api().find_members_by_name(name)
-    return jsonify([m.to_dict() for m in members.itervalues()])
+    return jsonify([m.to_dict() for m in members.values()])
 
 
-@pos.route('/stats', methods=['GET'])
+@bp.route('/stats', methods=['GET'])
 @login_required
 def activity_stats():
     pos_purchases_query = db.session.query(

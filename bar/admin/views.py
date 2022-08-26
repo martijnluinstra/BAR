@@ -1,21 +1,17 @@
-from __future__ import division
-
 import json
-
+from datetime import datetime
 from functools import wraps
 
 from flask import abort, request, render_template, redirect, url_for, current_app, has_request_context, jsonify
 from flask_login import login_user
-from flask_coverapi import current_user
-
-from datetime import datetime
+from flask_coverapi import current_user, login_url
 from sqlalchemy.exc import IntegrityError
 
 from bar import db
 from bar.pos.models import Activity, Product, Participant, Purchase
 from bar.auction.models import AuctionPurchase
 
-from . import admin
+from . import bp
 from .forms import ActivityForm, ActivityConfirmForm, ImportForm
 
 
@@ -25,6 +21,7 @@ def admin_required(func):
         if current_app.config.get('STAND_ALONE', False):
             return func(*args, **kwargs)
         elif not current_user.is_authenticated:
+            print(current_user, flush=True)
             return redirect(login_url())
         elif not current_user.is_admin:
             abort(403)
@@ -32,15 +29,15 @@ def admin_required(func):
     return decorated_view
 
 
-@admin.route('/', methods=['GET'])
-@admin.route('/activities', methods=['GET'])
+@bp.route('/', methods=['GET'])
+@bp.route('/activities', methods=['GET'])
 @admin_required
 def list_activities():
     activities = Activity.query.all()
     return render_template('admin/activity_list.html', activities=activities)
 
 
-@admin.route('/activities/add', methods=['GET', 'POST'])
+@bp.route('/activities/add', methods=['GET', 'POST'])
 @admin_required
 def add_activity():
     """ Try to create a new activity. """
@@ -57,13 +54,13 @@ def add_activity():
         except IntegrityError:
             db.session.rollback()
             form.passcode.errors.append('Please provide a unique passcode!')
-            return render_template('activity_form.html', form=form, mode='add')
+            return render_template('admin/activity_form.html', form=form, mode='add')
         else:
             return redirect(url_for('admin.list_activities'))
     return render_template('admin/activity_form.html', form=form, mode='add')
 
 
-@admin.route('/activities/import', methods=['GET', 'POST'])
+@bp.route('/activities/import', methods=['GET', 'POST'])
 @admin_required
 def import_activity():
     form = ImportForm()
@@ -149,7 +146,7 @@ def _load_activity(data, name=None, passcode=None):
     db.session.commit()
 
 
-@admin.route('/activities/<int:activity_id>', methods=['GET'])
+@bp.route('/activities/<int:activity_id>', methods=['GET'])
 @admin_required
 def view_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
@@ -191,26 +188,26 @@ def view_activity(activity_id):
     return render_template('admin/activity_details.html', activity=activity, stats=stats)
 
 
-@admin.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
+@bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     if activity.is_archived:
         abort(403)
-    form = ActivityForm(request.form, activity)
+    form = ActivityForm(obj=activity)
     if form.validate_on_submit():
         form.populate_obj(activity)
         try:
             db.session.commit()
         except IntegrityError:
             form.name.errors.append('Please provide a unique name!')
-            return render_template('activity_form.html', form=form, mode='edit', id=activity.id)
+            return render_template('admin/activity_form.html', form=form, mode='edit', id=activity.id)
         else:
             return redirect(url_for('admin.list_activities'))
     return render_template('admin/activity_form.html', form=form, mode='edit', id=activity.id)
 
 
-@admin.route('/activities/<int:activity_id>/impersonate', methods=['GET', 'POST'])
+@bp.route('/activities/<int:activity_id>/impersonate', methods=['GET', 'POST'])
 @admin_required
 def impersonate_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
@@ -220,7 +217,7 @@ def impersonate_activity(activity_id):
     return redirect(url_for('pos.view_home'))
 
 
-@admin.route('/activities/<int:activity_id>/activate', methods=['GET', 'POST'])
+@bp.route('/activities/<int:activity_id>/activate', methods=['GET', 'POST'])
 @admin_required
 def activate_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
@@ -231,7 +228,7 @@ def activate_activity(activity_id):
     return redirect(url_for('admin.list_activities'))
 
 
-@admin.route('/activities/<int:activity_id>/export.json', methods=['GET'])
+@bp.route('/activities/<int:activity_id>/export.json', methods=['GET'])
 @admin_required
 def export_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
@@ -240,7 +237,7 @@ def export_activity(activity_id):
     return jsonify(activity.to_dict())
 
 
-@admin.route('/activities/<int:activity_id>/archive', methods=['GET', 'POST'])
+@bp.route('/activities/<int:activity_id>/archive', methods=['GET', 'POST'])
 @admin_required
 def archive_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
@@ -320,7 +317,7 @@ def archive_activity(activity_id):
     return redirect(url_for('admin.list_activities'))
 
 
-@admin.route('/activities/<int:activity_id>/delete', methods=['GET', 'POST'])
+@bp.route('/activities/<int:activity_id>/delete', methods=['GET', 'POST'])
 @admin_required
 def delete_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)

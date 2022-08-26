@@ -103,6 +103,7 @@ var submit = function()
 	$.ajax($('#import-form').attr('href'),{
             data : JSON.stringify(rows),
             contentType : 'application/json',
+            headers: {'X-CSRFToken': window.csrf_token},
             type : 'POST' 
 	    }).success( function(response) {
 			if (response.length == 0) {

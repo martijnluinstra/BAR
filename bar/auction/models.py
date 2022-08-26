@@ -2,6 +2,7 @@ from datetime import datetime
 
 from bar import db
 
+
 class AuctionPurchase(db.Model):
     __table_args__ = {'mysql_engine':'InnoDB'}
     id = db.Column(db.Integer, primary_key=True)

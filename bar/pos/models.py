@@ -27,7 +27,7 @@ class Activity(db.Model, login.UserMixin):
         return self.active
 
     def to_dict(self):
-        settings_fields = ['age_limit', 'stacked_purchases', 'require_terms', 'terms', 'faq']
+        settings_fields = ['age_limit', 'stacked_purchases', 'require_terms', 'terms', 'faq', 'uuid_prefix']
         settings = dict((field.name, getattr(self, field.name)) for field in self.__table__.columns if field.name in settings_fields)
         return {
             'id': self.id,
