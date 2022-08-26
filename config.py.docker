@@ -1,0 +1,32 @@
+import os
+import secrets
+
+# Set a secret key for the FLASK's cryptographic component's. (See also https://flask.palletsprojects.com/en/2.2.x/tutorial/deploy/?highlight=secret%20key#configure-the-secret-key)
+SECRET_KEY = os.getenv('FLASK_SECRET_KEY', secrets.token_hex())
+
+SQLALCHEMY_DATABASE_URI = 'mysql://{}:{}@{}:{}/{}'.format(
+    os.getenv('DB_USER', 'bar'),
+    os.getenv('DB_PASSWORD', 'bar'),
+    os.getenv('DB_HOST', 'localhost'),
+    os.getenv('DB_PORT', '3306'),
+    os.getenv('DB_DATABASE', 'bar')
+)
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+COVER_API_URL = os.getenv('COVER_API_URL', 'https://www.svcover.nl/api')
+COVER_APP = os.getenv('COVER_APP', 'bar')
+COVER_SECRET = os.getenv('COVER_SECRET', '')
+COVER_COOKIE = os.getenv('COVER_COOKIE', 'cover_session_id')
+COVER_LOGIN_URL = os.getenv('COVER_LOGIN_URL', 'https://www.svcover.nl/login')
+COVER_LOGOUT_URL = os.getenv('COVER_LOGOUT_URL', 'https://www.svcover.nl/logout')
+
+COVER_ADMINS = os.getenv('COVER_ADMINS', 'board audicee candy webcie').split()
+
+SECRETARY_URL = os.getenv('SECRETARY_URL', 'https://secretary.svcover.nl/api/')
+SECRETARY_USER = os.getenv('SECRETARY_USER', 'bar')
+SECRETARY_PASSWORD = os.getenv('SECRETARY_PASSWORD', '')
+SECRETARY_TOKEN_DUMP_LOCATION = os.getenv('SECRETARY_TOKEN_DUMP_LOCATION', '/tmp')
+
+STAND_ALONE = (os.getenv('STAND_ALONE', 'true').lower() != 'false')
+
+NO_IBAN_STRING = os.getenv('NO_IBAN_STRING', 'OUTSIDE_SEPA_AREA')

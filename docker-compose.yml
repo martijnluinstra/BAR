@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb
+    volumes:
+      - ./tmp/db:/var/lib/mysql
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: yes
+      MARIADB_DATABASE: bar
+      MARIADB_USER: bar
+      MARIADB_PASSWORD: password
+  bar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bar
+    restart: on-failure
+    ports:
+      - 5000:5000
+    command: bash -c "flask db upgrade && flask run --host 0.0.0.0 --port 5000"
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      FLASK_APP: bar:create_app()
+      DB_DATABASE: bar
+      DB_USER: bar
+      DB_PASSWORD: password
+      DB_HOST: mariadb
+    volumes:
+      - ./bar:/app/bar
+      - ./migrations:/app/migrations
+    depends_on:
+      - mariadb
