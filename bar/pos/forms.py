@@ -1,9 +1,9 @@
-from validators import iban
-
 from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, BooleanField, IntegerField, DateTimeField, RadioField, SelectField, validators, TextAreaField
+
+from bar.utils import validate_bic, validate_iban
 
 
 class ExportForm(FlaskForm):
@@ -47,8 +47,16 @@ class ParticipantForm(FlaskForm):
     ])
 
     def validate_iban(form, field):
-        if field.raw_data[0] != current_app.config.get('NO_IBAN_STRING', 'OUTSIDE_SEPA_AREA') and (not iban(field.raw_data[0]) or len(field.raw_data[0]) > 34):
-            raise validators.StopValidation('This is not a valid IBAN')
+        try:
+            validate_iban(field.data)
+        except Exception as e:
+            raise validators.ValidationError(str(e))
+
+    def validate_bic(form, field):
+        try:
+            validate_bic(field.data)
+        except Exception as e:
+            raise validators.ValidationError(str(e))
 
 
 class RegistrationForm(FlaskForm):

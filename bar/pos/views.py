@@ -4,14 +4,13 @@ import json
 import re
 from datetime import datetime
 
-
-import validators
 from flask import request, render_template, redirect, url_for, abort, make_response, flash, Response, get_flashed_messages, current_app, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from email_validator import validate_email, EmailNotValidError
 
 from bar import db, login_manager
-from bar.utils import is_safe_url, get_secretary_api
+from bar.utils import is_safe_url, get_secretary_api, validate_bic, validate_iban
 from bar.auction.models import AuctionPurchase
 
 from . import bp
@@ -117,7 +116,7 @@ def import_process_csv(form):
 
 
 def import_report_error(errors, key, err):
-    if  errors.has_key(key):
+    if key in errors:
         errors[key].update(err)
     else:
         errors[key] = err
@@ -136,12 +135,27 @@ def import_validate_row(key, row, errors):
     row['iban'] = row['iban'].upper().replace(" ", "").encode('ascii', 'ignore').decode()
     row['bic'] = row['bic'].upper().replace(" ", "")
 
-    if not validators.email(row['email']):
-        import_report_error(errors,key,{'email': ['type']})
-    if row['iban'] != current_app.config.get('NO_IBAN_STRING', 'OUTSIDE_SEPA_AREA') and (not validators.iban(row['iban']) or len(row['iban']) > 34):
-        import_report_error(errors,key,{'iban': ['type']})
-    if row['bic'] and not ( len(row['bic']) == 8 or len(row['bic']) == 11 ):
-        import_report_error(errors,key,{'bic': ['type']})
+    try:
+        validate_email(
+            row['email'],
+            check_deliverability=False
+        )
+    except EmailNotValidError as e:
+        import_report_error(errors,key,{'email': ['type', str(e)]})
+
+    try:
+        iban = validate_iban(row['iban'])
+    except Exception as e:
+        iban = None
+        import_report_error(errors, key, {'iban': ['type', str(e)]})
+
+    try:
+        if row['bic']:
+            validate_bic(row['bic'])
+        elif iban:
+            row['bic'] = iban.bic
+    except Exception as e:
+        import_report_error(errors, key, {'bic': ['type', str(e)]})
 
     for prop in ['name', 'address', 'city', 'email', 'iban']:
         if not row[prop].strip():
