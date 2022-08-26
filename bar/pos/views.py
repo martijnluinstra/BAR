@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import re
+from collections import defaultdict
 from datetime import datetime
 
 from flask import request, render_template, redirect, url_for, abort, make_response, flash, Response, get_flashed_messages, current_app, jsonify
@@ -115,21 +116,15 @@ def import_process_csv(form):
     return render_template('pos/import_select_form.html', json_data=data)
 
 
-def import_report_error(errors, key, err):
-    if key in errors:
-        errors[key].update(err)
-    else:
-        errors[key] = err
-
-
-def import_validate_row(key, row, errors):
+def import_validate_row(row):
+    errors = defaultdict(list)
     # Fix birthday
     birthday = None
     if row['birthday']:
         try:
             birthday = datetime.strptime(row['birthday'], '%Y-%m-%d')
         except ValueError:
-            import_report_error(errors,key,{'birthday': ['type']})
+            errors['birthday'].append('type')
     row['birthday'] = birthday
     # Clean iban and bic
     row['iban'] = row['iban'].upper().replace(" ", "").encode('ascii', 'ignore').decode()
@@ -141,13 +136,13 @@ def import_validate_row(key, row, errors):
             check_deliverability=False
         )
     except EmailNotValidError as e:
-        import_report_error(errors,key,{'email': ['type', str(e)]})
+        errors['email'].extend(['type', str(e)])
 
     try:
         iban = validate_iban(row['iban'])
     except Exception as e:
         iban = None
-        import_report_error(errors, key, {'iban': ['type', str(e)]})
+        errors['iban'].extend(['type', str(e)])
 
     try:
         if row['bic']:
@@ -155,18 +150,18 @@ def import_validate_row(key, row, errors):
         elif iban:
             row['bic'] = iban.bic
     except Exception as e:
-        import_report_error(errors, key, {'bic': ['type', str(e)]})
+        errors['bic'].extend(['type', str(e)])
 
     for prop in ['name', 'address', 'city', 'email', 'iban']:
         if not row[prop].strip():
-            import_report_error(errors,key,{prop: ['nonblank']})
+            errors[prop].append('nonblank')
     return (row, errors)
 
 
 def import_process_data(data):
-    errors = {}
+    errors = defaultdict(lambda: defaultdict(list))
     for key, row in data.items():
-        row, errors = import_validate_row(key, row, errors)
+        row, err = import_validate_row(row)
         participant = Participant(
             name=row['name'],
             uuid=row['uuid'],
@@ -179,11 +174,13 @@ def import_process_data(data):
             activity=current_user
         )
         db.session.add(participant)
+        if err:
+            errors[key] = err
         try:
             db.session.flush()
         except IntegrityError:
             db.session.rollback()
-            import_report_error(errors,key,{'name': ['nonunique']})
+            errors[key]['name'].append('nonunique')
     if not errors:
         db.session.commit()
         return "", 200
