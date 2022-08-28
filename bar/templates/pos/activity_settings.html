@@ -10,24 +10,6 @@
 	<p>Export all purchases to an <a href="https://incasso.svcover.nl" target="_blank">Incass-o-matic</a> compliant CSV-file.</p>
 	<p><a href="{{url_for('pos.activity_export_form')}}" class="btn btn-default">Export</a></p>
 	<hr>
-	<h2>Public registration</h2>
-	<p>
-		Using this public link, people can create an account for this event in BAR from their mobile device. Print a QR code with this link and display it close to the bar so people can easily reach the page. This can help reduce congestion at the bar during the event.
-	</p>
-  	<div class="form-group">
-		<div class="input-group">
-			<input class="form-control" type="text" readonly value="{{ url_for('pos.add_participant_public', activity_id=current_user.id, _external=True) }}" id="public-registration-link">
-			<span class="input-group-btn">
-			   <button class="btn btn-default" type="button" data-copy="#public-registration-link">Copy</button>
-			</span>
-		</div>
-	</div>
-	{% if config.STAND_ALONE %}
-		<div class="alert alert-danger" role="alert">
-			<strong>Warning!</strong>This is a stand-alone instance of BAR. Using public registration is not recommended for the stand-alone configuration, as it shouldn't be run on a public network.
-		</div>
-	{% endif %}
-	<hr>
 	<h2>Settings</h2>
 	<form method="post">
 		{{ form.hidden_tag() }}
@@ -68,6 +50,24 @@
 		{{ render_errors(form.uuid_prefix) }}
 		<button type="submit" class="btn btn-primary">Submit settings</button>
 	</form>
+	<hr>
+	<h2>Public registration</h2>
+	<p>
+		Using this public link, people can create an account for this event in BAR from their mobile device. Print a QR code with this link and display it close to the bar so people can easily reach the page. This can help reduce congestion at the bar during the event.
+	</p>
+  	<div class="form-group">
+		<div class="input-group">
+			<input class="form-control" type="text" readonly value="{{ url_for('pos.add_participant_public', activity_id=current_user.id, _external=True) }}" id="public-registration-link">
+			<span class="input-group-btn">
+			   <button class="btn btn-default" type="button" data-copy="#public-registration-link">Copy</button>
+			</span>
+		</div>
+	</div>
+	{% if config.STAND_ALONE %}
+		<div class="alert alert-danger" role="alert">
+			<strong>Warning!</strong>This is a stand-alone instance of BAR. Using public registration is not recommended for the stand-alone configuration, as it shouldn't be run on a public network.
+		</div>
+	{% endif %}
 </div>
 {% endblock %}
 
