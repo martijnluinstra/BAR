@@ -16,7 +16,7 @@ from bar.auction.models import AuctionPurchase
 
 from . import bp
 from .models import Activity, Participant, Purchase, Product
-from .forms import ParticipantForm, ProductForm, RegistrationForm, SettingsForm, ImportForm, ExportForm
+from .forms import ParticipantForm, PublicParticipantForm, ProductForm, RegistrationForm, SettingsForm, ImportForm, ExportForm
 
 
 class CSVRowError(Exception):
@@ -203,6 +203,7 @@ def add_participant():
             iban=form.iban.data,
             bic=form.bic.data,
             birthday=form.birthday.data,
+            barcode=form.barcode.data,
             activity=current_user
         )
         db.session.add(participant)
@@ -568,3 +569,50 @@ def activity_stats():
             .group_by(Participant.name).order_by(db.desc('amount')).limit(10)
     }
     return render_template('pos/activity_stats.html', **stats)
+
+
+
+@bp.route('/<int:activity_id>/register', methods=['GET', 'POST'])
+def add_participant_public(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if not activity.active:
+        return 'Activity not active', 404
+
+    form = PublicParticipantForm()
+    if not activity.require_terms:
+        del form.has_agreed_to_terms
+    if form.validate_on_submit():
+        bic = form.bic.data
+        if not form.bic.data:
+            iban = validate_iban(form.iban.data)
+            if iban:
+                bic = iban.bic
+        participant = Participant(
+            name=form.name.data, 
+            address=form.address.data,
+            city=form.city.data,
+            email=form.email.data,
+            iban=form.iban.data,
+            bic=bic,
+            birthday=form.birthday.data,
+            activity=activity
+        )
+        if activity.require_terms:
+            participant.has_agreed_to_terms = form.has_agreed_to_terms.data
+        try:
+            db.session.add(participant)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            form.name.errors.append('Your name is already in the system!')
+        else:
+            return render_template('pos/public_participant_success.html', participant=participant, activity=activity)
+    return render_template('pos/public_participant_form.html', form=form, activity=activity)
+
+
+@bp.route('/<int:activity_id>/participants/<int:participant_id>', methods=['GET', 'POST'])
+def show_participant_public(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if not activity.active:
+        return 'Activity not active', 404
+    return render_template('pos/public_participant.html', form=form, activity=activity)

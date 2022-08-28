@@ -1,0 +1,60 @@
+{% macro render_errors(field, class='dialog') -%}
+    {% if field.errors %}
+        {% for error in field.errors %}
+        <div class="alert alert-danger">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <strong>Oh dear!</strong> {{ error }}
+        </div>
+        {% endfor %}
+    {% endif %}
+{%- endmacro %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% block head %}
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <title>BAR{{ ' – 'if self.title() }}{% block title %}{% endblock %}</title>
+    {% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cdl.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bar.css') }}">
+    {% endblock %}
+{% endblock %}
+</head>
+<body id="{% block page_id %}{% endblock %}">
+    <nav class="navbar navbar-cover">
+    {% block header%}
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button class="navbar-toggle collapsed navicon-button" href="#navbar-main-collapse" data-toggle="collapse" aria-expanded="false" aria-controls="navbar-main-collapse"><span class="navicon navicon-white"></span></button>
+                <a href="#" class="navbar-logo"><img src="{{ url_for('static', filename='img/cover.png') }}"></a>
+                <div  class="navbar-brand">BAR: {{ activity.name }}</div>
+            </div>
+        </div>
+    {% endblock %}
+    </nav>
+    
+    {% block messages %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible alert-flash" role="alert">
+                      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                      {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    {% endblock %}
+
+    {% block content %}
+    {% endblock %}
+{% block scripts%}
+    <script src="{{ url_for('static', filename='js/jquery-1.11.3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+{% endblock %}
+</body>
+</html>

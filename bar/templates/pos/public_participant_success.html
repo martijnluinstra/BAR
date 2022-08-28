@@ -1,0 +1,24 @@
+{% extends "public_base.html" %}
+
+{% block page_id %}participant-add-public-success{% endblock %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+	<h1>Registration successful!</h1>
+	<p>You've been registered for the bar at {{activity.name}}, and can now make a purchase. They might need to refresh the system.</p>
+	<p>Here's what you entered:</p>
+	<table class="table table-bordered table-condensed">
+		<tr><th class="col-sm-4">Name</th><td class="col-sm-8">{{ participant.name }}</td></tr>
+		<tr><th>Address</th><td>{{ participant.address }}</td></tr>
+		<tr><th>Place of residence</th><td>{{ participant.city }}</td></tr>
+		<tr><th>Email</th><td>{{ participant.email }}</td></tr>
+		<tr><th>IBAN</th><td>{{ participant.iban }}</td></tr>
+		<tr><th>BIC</th><td>{{ participant.bic }}</td></tr>
+		<tr><th>Date of birth</th><td>{{ participant.birthday }}</td></tr>
+		{% if activity.require_terms and participant.has_agreed_to_terms %}
+			<tr><th>Terms & conditions</th><td>You agreed</td></tr>
+		{% endif %}
+	</table>
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, BooleanField, IntegerField, DateTimeField, RadioField, SelectField, validators, TextAreaField
+from wtforms import StringField, EmailField, BooleanField, IntegerField, DateField, DateTimeField, RadioField, SelectField, validators, TextAreaField
 
 from bar.utils import validate_bic, validate_iban
 
@@ -36,7 +36,6 @@ class ParticipantForm(FlaskForm):
     ])
     bic = StringField('BIC (optional)', [
         validators.Optional(strip_whitespace=True),
-        validators.length(max=11, message='A BIC may not be longer than 11 characters')
     ])
     birthday  = DateTimeField('Date of birth (optional)', format='%Y-%m-%d', validators=[
         validators.Optional(strip_whitespace=True)
@@ -45,6 +44,84 @@ class ParticipantForm(FlaskForm):
         validators.Optional(strip_whitespace=True),
         validators.length(max=255)
     ])
+
+    def validate_iban(form, field):
+        try:
+            validate_iban(field.data)
+        except Exception as e:
+            raise validators.ValidationError(str(e))
+
+    def validate_bic(form, field):
+        try:
+            validate_bic(field.data)
+        except Exception as e:
+            raise validators.ValidationError(str(e))
+
+class PublicParticipantForm(FlaskForm):
+    name = StringField(
+        label='Name',
+        validators=[
+            validators.InputRequired(message='Name is required')
+        ],
+        render_kw={
+            'autocomplete': 'name'
+        },
+    )
+    address = StringField(
+        label='Address', 
+        validators=[
+            validators.InputRequired(message='Address is required')
+        ],
+        render_kw={
+            'autocomplete': 'address-line1'
+        },
+    )
+    city = StringField(
+        label='Place of residence',
+        validators=[
+            validators.InputRequired(message='Place of residence is required')
+        ],
+        render_kw={
+            'autocomplete': 'address-level2'
+        },
+    )
+    email = EmailField(
+        label='Email address',
+        validators=[
+            validators.InputRequired(message='Email is required'),
+            validators.Email(message='Invalid email address')
+        ],
+        render_kw={
+            'autocomplete': 'email'
+        },
+    )
+    iban = StringField(
+        label='Bankaccount: IBAN',
+        validators=[
+            validators.InputRequired(message='IBAN is required')
+        ],
+    )
+    bic = StringField(
+        label='Bankaccount: BIC (optional)',
+        validators=[
+            validators.Optional(strip_whitespace=True),
+        ],
+    )
+    birthday = DateField(
+        label='Date of birth',
+        validators=[
+            validators.InputRequired(message='Date of birth is required')
+        ],
+        render_kw={
+            'autocomplete': 'bday'
+        },
+    )
+    has_agreed_to_terms = BooleanField(
+        label='I agree to the terms and conditions',
+        validators=[
+            validators.InputRequired(message='You have to agree to the terms and conditions.')
+        ]
+    )
 
     def validate_iban(form, field):
         try:
