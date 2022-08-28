@@ -10,3 +10,4 @@ coverapi.zip
 flask_coverapi.zip
 __config.py
 tmp
+docker-compose.local.yml
