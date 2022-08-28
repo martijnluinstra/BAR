@@ -10,6 +10,15 @@ table .list-inline {
   margin-bottom: 0;
 }
 
+.form-control[readonly] {
+  cursor: text;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 34px;
+}
+
 /*h1{font-size: 24px;}
 h2{font-size: 20px;}
 h3{font-size: 18px;}
@@ -47,6 +56,17 @@ h4{font-size: 16px;}*/
   max-width: 500px;
   margin: 0 auto;
 }
+
+.textarea-group {
+  position: relative;
+}
+
+.textarea-group .textarea-group-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
 
 /* Bootstrap spinner */
 .spinner {

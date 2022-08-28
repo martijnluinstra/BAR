@@ -63,7 +63,7 @@
 	<p>
 		Using this public link, people can create an account for this event in BAR from their mobile device. Print a QR code with this link and display it close to the bar so people can easily reach the page. This can help reduce congestion at the bar during the event.
 	</p>
-  	<div class="form-group">
+	<div class="form-group">
 		<div class="input-group">
 			<input class="form-control" type="text" readonly value="{{ url_for('pos.add_participant_public', activity_id=current_user.id, _external=True) }}" id="public-registration-link">
 			<span class="input-group-btn">
@@ -93,7 +93,7 @@
 
 			constructor(options) {
 				this.element = options.element;
-			    this.element.addEventListener('click', this.handleClick.bind(this));
+				this.element.addEventListener('click', this.handleClick.bind(this));
 			}
 
 			async handleClick(evt) {

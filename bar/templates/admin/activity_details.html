@@ -33,16 +33,22 @@
             <thead>
                 <tr>
                     <th>Product</th>
-                    <th>Price</th>
                     <th>Age Limit</th>
+                    <th class="text-right">Price</th>
                 </tr>
             </thead>
             <tbody>
                 {% for product in activity.products %}
                 <tr id="{{ product.id }}">
                     <td>{{product.name}}</td>
-                    <td>{{product.price|format_exchange}}</td>
-                    <td>{% if product.age_limit %}<span class="glyphicon glyphicon-ok"></span>{% endif %}</td>
+                    <td>
+                        {% if product.age_limit %}
+                            <span class="glyphicon glyphicon-ok text-success"><span class="sr-only">Yes</span></span>
+                        {% else %}
+                            <span class="glyphicon glyphicon-remove text-danger"><span class="sr-only">No</span></span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">{{product.price|format_exchange}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -65,16 +71,16 @@
             <thead>
                 <tr>
                     <th class="col-sm-7">Product</th>
-                    <th class="col-sm-3">Amount</th>
-                    <th class="col-sm-2">Units</th>
+                    <th class="col-sm-3 text-right">Amount</th>
+                    <th class="col-sm-2 text-right">Units</th>
                 </tr>
             </thead>
             <tbody>
                 {% for product in stats.pos_purchases_products %}
                     <tr>
                         <td>{{ product.name }}</td>
-                        <td>{{ product.amount|format_exchange }}</td>
-                        <td>{{ product.units }}</td>
+                        <td class="text-right">{{ product.amount|format_exchange }}</td>
+                        <td class="text-right">{{ product.units }}</td>
                     </tr>
                 {% else %}
                     <tr>
@@ -85,11 +91,104 @@
             <tfoot>
                 <tr>
                     <th>Total</th>
-                    <th>{{ stats.pos_purchases_total.amount|format_exchange }}</th>
-                    <th>{{ stats.pos_purchases_total.units }}</th>
+                    <th class="text-right">{{ stats.pos_purchases_total.amount|format_exchange }}</th>
+                    <th class="text-right">{{ stats.pos_purchases_total.units }}</th>
                 </tr>
             </tfoot>
         </table>
     </section>
+    <section id="pos-stats">
+        <h2>Settings</h2>
+        <div class="form-group">
+            <label for="setting-age-limit">Age limit (minimal legal age)</label>
+            <div class="input-group">
+                <input class="form-control" type="text" readonly value="{{ activity.age_limit }}" id="setting-age-limit">
+                <span class="input-group-btn">
+                   <button class="btn btn-default" type="button" data-copy="#setting-age-limit">Copy</button>
+                </span>
+            </div>
+        </div>
+        <p>
+            <strong>Allow stacked purchases (e.g. buy 6 beers at once):</strong>
+            {% if activity.stacked_purchases %}
+                <span class="glyphicon glyphicon-ok text-success"><span class="sr-only">Yes</span></span>
+            {% else %}
+                <span class="glyphicon glyphicon-remove text-danger"><span class="sr-only">No</span></span>
+            {% endif %}
+        </p>
+        <p>
+            <strong>Accept terms before purchases:</strong>
+            {% if activity.require_terms %}
+                <span class="glyphicon glyphicon-ok text-success"><span class="sr-only">Yes</span></span>
+            {% else %}
+                <span class="glyphicon glyphicon-remove text-danger"><span class="sr-only">No</span></span>
+            {% endif %}
+        </p>
+        <div class="form-group">
+            <label for="setting-terms">Terms</label>
+            <div class="textarea-group">
+                <textarea class="form-control" rows="3" id="setting-terms" readonly>{% if activity.terms %}{{ activity.terms }}{% endif %}</textarea>
+                <span class="textarea-group-btn">
+                   <button class="btn btn-default" type="button" data-copy="#setting-terms">Copy</button>
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="setting-faq">FAQ</label>
+            <div class="textarea-group">
+                <textarea class="form-control" rows="3" id="setting-faq" readonly>{% if activity.faq %}{{ activity.faq }}{% endif %}</textarea>
+                <span class="textarea-group-btn">
+                   <button class="btn btn-default" type="button" data-copy="#setting-faq">Copy</button>
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="setting-uuid-prefix">Ticket UUID prefix</label>
+            <div class="input-group">
+                <input class="form-control" type="text" readonly value="{% if activity.uuid_prefix %}{{ activity.uuid_prefix }}{% endif %}" id="setting-uuid-prefix">
+                <span class="input-group-btn">
+                   <button class="btn btn-default" type="button" data-copy="#setting-uuid-prefix">Copy</button>
+                </span>
+            </div>
+        </div>
+    </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{super()}}
+    <script>
+        class CopyButton {
+            static parseDocument(context) {
+                context.querySelectorAll('[data-copy]').forEach(function(element) {
+                    new CopyButton({
+                        element: element,
+                    });
+                });
+            }
+
+            constructor(options) {
+                this.element = options.element;
+                this.element.addEventListener('click', this.handleClick.bind(this));
+            }
+
+            async handleClick(evt) {
+                let el = document.querySelector(this.element.dataset.copy);
+                try {
+                    await navigator.clipboard.writeText(el.value);
+                    this.element.blur();
+                    this.element.disabled = true;
+                    this.element.classList.replace('btn-default', 'btn-success');
+                    setTimeout(() => {
+                        this.element.disabled = false;
+                        this.element.classList.replace('btn-success', 'btn-default');
+                    }, 2000);
+                } catch (e) {
+                    console.error(e);
+                    prompt('Error copying link. Try copying it manually instead instead.');
+                }
+            }
+        }
+        CopyButton.parseDocument(document);
+    </script>
 {% endblock %}
