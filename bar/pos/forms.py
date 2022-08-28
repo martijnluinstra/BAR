@@ -169,7 +169,7 @@ class SettingsForm(FlaskForm):
         validators.Optional(strip_whitespace=True),
         validators.length(max=4096)
     ])
-    uuid_prefix = StringField('UUID Prefix', [validators.length(max=255)])
+    uuid_prefix = StringField('Ticket UUID Prefix', [validators.length(max=255)])
 
     def validate_terms(form, field):
         if not form.require_terms.data:

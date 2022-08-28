@@ -20,6 +20,9 @@
         <div class="form-group">
             {{ form.name.label(class="control-label") }}
             {{ form.name(class="form-control typeahead", autocomplete="off", autofocus="true") }}
+            <p class="help-block">
+                Type name or scan ticket to autocomplete.
+            </p>
         </div>
         {{ render_errors(form.name) }}
         <div class="form-group">

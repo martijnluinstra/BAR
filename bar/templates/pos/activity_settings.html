@@ -46,6 +46,14 @@
 		<div class="form-group">
 			{{ form.uuid_prefix.label(class="control-label") }}
 			{{ form.uuid_prefix(class="form-control") }}
+			<p class="help-block">
+				<a role="button" data-toggle="collapse" href="#uuid-prefix-info" aria-expanded="false" aria-controls="uuid-prefix-info">
+					What does this setting do?
+				</a>
+				<div class="collapse" id="uuid-prefix-info">
+					Prefix of ticket barcode. This allows you to import user UUID's for each user, and then scan tickets with this prefix. For example, the IntroCee tickets in 2019 had QR codes linking to https://introcee.svcover.nl/camp/participant.php?uuid=XXXXXXXXXXXXX. In this case, the url was added as prefix to enable finding participants in the home screen and registration screen by scanning the tickets.
+				</div>
+			</p>
 		</div>
 		{{ render_errors(form.uuid_prefix) }}
 		<button type="submit" class="btn btn-primary">Submit settings</button>
