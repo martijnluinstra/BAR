@@ -1,6 +1,8 @@
 BAR
 ===
 
+**Important! BAR is no longer actively developed and should be considered end of life. I consider BAR's to be a suboptimal POS system, born out of necessity and archaic solutions. The codebase is outdated and not representative of good practise nor my skills. The latest updates have been to make it possible to deploy BAR in a modern environment, remove unsupported dependencies and fix some of the most important issues. With these updates BAR can still be used while considering alternatives, but it really shouldn't be.** 
+
 BAR (Beverage Administration Register) is a simple web based system to maintain a counter for each user, which has been used to count the amount of beer each student has consumed during the introductory camp of study association Cover.
 
 ## Setup ##
