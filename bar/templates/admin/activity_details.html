@@ -6,7 +6,7 @@
         <h1>{{ activity.name }}</h1>
         <div class="content-controls">
             {% if not activity.is_archived %}
-                <a href="{{url_for('admin.edit_activity', activity_id=activity.id)}}" class="btn btn-default" download>Edit</a>
+                <a href="{{url_for('admin.edit_activity', activity_id=activity.id)}}" class="btn btn-default">Edit</a>
                 <div class="btn-group" role="group">
                     <a href="{{url_for('admin.export_activity', activity_id=activity.id)}}" class="btn btn-default" download>Export</a>
                     <button class="btn btn-default dropdown-toggle" type="button" id="controls-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
