@@ -15,7 +15,7 @@ from .models import AuctionPurchase
 def list_auction():
     form = AuctionForm()
     if form.validate_on_submit():
-        participant = Participant.query.filter_by(name=form.participant.data).first()
+        participant = Participant.query.filter_by(name=form.participant.data, activity_id=current_user.id).first()
         purchase = AuctionPurchase(participant_id=participant.id, activity_id=current_user.id, description=form.description.data, price=form.price.data)
         db.session.add(purchase)
         db.session.commit()
@@ -33,7 +33,7 @@ def edit_auction_purchase(purchase_id):
         return 'Purchase not in current activity', 401
     form = AuctionForm(obj=purchase)
     if form.validate_on_submit():
-        participant = Participant.query.filter_by(name=form.participant.data).first()
+        participant = Participant.query.filter_by(name=form.participant.data, activity_id=current_user.id).first()
         if participant:
             form.participant.data = participant
             form.populate_obj(purchase)
